@@ -1,0 +1,6 @@
+[pro-build]
+command=cmake -DCMAKE_BUILD_TYPE=Debug .. && make
+cwd=<root>/build
+[pro-run]
+command=src/localsend
+cwd=<root>/build
