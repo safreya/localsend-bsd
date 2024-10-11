@@ -79,7 +79,7 @@ int selfcert(const std::string &p) {
   X509_NAME_free(name);
   EVP_PKEY_CTX_free(ctx);
 
-  std::cout << "自签名证书已成功,保存在 "<<p<<" 中!" << std::endl;
+  std::cout << "自签名证书已成功,保存在 " << p << " 中!" << std::endl;
 
   return 0;
 }

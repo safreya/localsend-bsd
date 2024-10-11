@@ -9,10 +9,10 @@
 #include <random>
 #include <thread>
 
+#include "global.h"
 #include "selfcert.h"
 #include "sha.h"
 #include "udp.h"
-#include "global.h"
 nlohmann::json uploadsessions;
 
 std::string genRndStr(size_t length) {
@@ -36,7 +36,8 @@ std::string get_new_filename(const std::string &filename) {
   std::string random_suffix = genRndStr(4);
   return base_name + "_" + random_suffix + extension;
 }
-void handleupload(const httplib::Request &req, httplib::Response &res,const std::string& savedir) {
+void handleupload(const httplib::Request &req, httplib::Response &res,
+                  const std::string &savedir) {
   auto sessionId = req.get_param_value("sessionId");
   if (!uploadsessions.contains(sessionId)) {
     res.status = 400;
@@ -65,20 +66,17 @@ void handleupload(const httplib::Request &req, httplib::Response &res,const std:
             .get<std::string>()
             .compare(metasha256) != 0) {
       res.status = 400;
-      // res.set_content("检查 sha256 错误!", "text/plain"); //无须返回
       return;
     }
   }
 
   std::string filename =
       uploadsessions[sessionId][fileId]["info"]["fileName"].get<std::string>();
-  while (std::filesystem::exists(savedir+
-			  "/"+
-			  filename)) {
+  while (std::filesystem::exists(savedir + "/" + filename)) {
     filename = get_new_filename(filename);
   }
-  
-  std::ofstream outfile(savedir+"/"+filename, std::ios::binary);
+
+  std::ofstream outfile(savedir + "/" + filename, std::ios::binary);
   if (!outfile) {
     std::cerr << "打开文件出错!" << std::endl;
     res.status = 500;
@@ -104,8 +102,9 @@ void handleupload(const httplib::Request &req, httplib::Response &res,const std:
 
   std::cout << "文件已保存为: " << filename << std::endl;
   res.status = 200;
-      uploadsessions[sessionId].erase(fileId);
-      if(uploadsessions[sessionId].size()==0)uploadsessions.erase(sessionId);
+  uploadsessions[sessionId].erase(fileId);
+  if (uploadsessions[sessionId].size() == 0)
+    uploadsessions.erase(sessionId);
 
   return;
 }
@@ -147,8 +146,12 @@ void handleprepareupload(const httplib::Request &req, httplib::Response &res) {
 #endif
   res.set_content(resjson.dump(), "application/json");
 }
-void start_recv(const std::string& savedir) {
-	if(!std::filesystem::exists(savedir)|| !std::filesystem::is_directory(savedir)){std::cerr<<savedir<<": 不存在或不是目录"<<std::endl;exit(1);}
+void start_recv(const std::string &savedir) {
+  if (!std::filesystem::exists(savedir) ||
+      !std::filesystem::is_directory(savedir)) {
+    std::cerr << savedir << ": 不存在或不是目录" << std::endl;
+    exit(1);
+  }
   std::string cfgdir(getenv("HOME"));
   cfgdir.append("/.config/localsend");
   if (!std::filesystem::exists(cfgdir)) {
@@ -163,8 +166,11 @@ void start_recv(const std::string& savedir) {
   std::thread t(start_listener);
   httplib::SSLServer svr(certfile.c_str(), keyfile.c_str());
   svr.Post("/api/localsend/v2/prepare-upload", handleprepareupload);
-  svr.Post("/api/localsend/v2/upload",  [savedir](const httplib::Request& req, httplib::Response& res){handleupload(req, res, savedir);});
-  std::cout<<"接收端已准备, 等待连接..."<<std::endl;
+  svr.Post("/api/localsend/v2/upload",
+           [savedir](const httplib::Request &req, httplib::Response &res) {
+             handleupload(req, res, savedir);
+           });
+  std::cout << "接收端已准备, 等待连接..." << std::endl;
   svr.listen("0.0.0.0", 53317);
   run.store(false);
   return;

@@ -8,8 +8,8 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-#include "sha.h"
 #include "global.h"
+#include "sha.h"
 
 void set_myself() {
   auto now = std::chrono::system_clock::now();

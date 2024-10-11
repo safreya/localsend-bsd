@@ -7,13 +7,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "global.h"
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include "global.h"
-
 
 void udpresponse(std::string ip) {
   int sock = socket(AF_INET, SOCK_DGRAM, 0);

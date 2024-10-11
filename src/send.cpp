@@ -10,10 +10,20 @@
 #include <nlohmann/json.hpp>
 #include <thread>
 
+#include "global.h"
 #include "sha.h"
 #include "udp.h"
-#include "global.h"
 
+static int progress_callback(void *clientp, curl_off_t total_to_download,
+                             curl_off_t now_download,
+                             curl_off_t total_to_upload,
+                             curl_off_t now_upload) {
+  double progress = static_cast<double>(now_upload) / total_to_upload * 100.0;
+  std::cout << "上传进度: " << now_upload << " / " << total_to_upload << "("
+            << progress << "%)\r";
+  std::cout.flush();
+  return 0;
+}
 
 size_t WriteCallback(void *contents, size_t size, size_t nmemb,
                      std::string *userp) {
@@ -64,6 +74,9 @@ void sendfiles(nlohmann::json &client, nlohmann::json &fileinfos) {
 
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, file_content.c_str());
       curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, file_content.size());
+      curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+      curl_easy_setopt(curl, CURLOPT_XFERINFODATA, nullptr);
+      curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 
       std::cout << "开始传输: "
                 << fileinfos["files"][f.key()]["fileName"].get<std::string>()
@@ -131,8 +144,7 @@ bool checkfiles(const std::vector<std::string> &files,
   }
 
   if (magic_load(magic, nullptr) != 0) {
-    std::cerr << "载入 libmagic 数据失败: " << magic_error(magic)
-              << std::endl;
+    std::cerr << "载入 libmagic 数据失败: " << magic_error(magic) << std::endl;
     magic_close(magic);
     return 1;
   }
@@ -181,7 +193,7 @@ void send(const std::vector<std::string> &files) {
     std::cout << "没有发现客户端, 退出！" << std::endl;
     exit(0);
   }
-  std::cout<<"请选择客户端 ..."<<std::endl;
+  std::cout << "请选择客户端 ..." << std::endl;
   int index = 1;
   for (auto c : clients) {
     std::cout << index << ": " << c.second["alias"] << std::endl;

@@ -1,9 +1,8 @@
-#include <cxxopts.hpp>
-#include <iostream>
 #include "recv.h"
 #include "self_info.h"
 #include "send.h"
-
+#include <cxxopts.hpp>
+#include <iostream>
 
 int main(int argc, char **argv) {
   cxxopts::Options opt("localsend", "一个简单的 localsend 实现");
@@ -30,10 +29,12 @@ int main(int argc, char **argv) {
   }
   if (result.count("subcmd") &&
       result["subcmd"].as<std::string>().compare("recv") == 0) {
-	  std::string savedir(".");
+    std::string savedir(".");
     if (!result.count("filenames")) {
       std::cout << "没有指定保存目录, 使用当前目录" << std::endl;
-    }else{savedir=result["filenames"].as<std::vector<std::string>>().at(0);}
+    } else {
+      savedir = result["filenames"].as<std::vector<std::string>>().at(0);
+    }
 
     start_recv(savedir);
   }
