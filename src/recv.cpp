@@ -100,12 +100,13 @@ void handleupload(const httplib::Request &req, httplib::Response &res,
     return;
   }
 
-  std::cout << "文件已保存为: " << filename << std::endl;
+  std::cout << "文件已保存为: " << filename<<"("<<sessionId<<")" << std::endl;
   res.status = 200;
   uploadsessions[sessionId].erase(fileId);
   if (uploadsessions[sessionId].size() == 0)
-    uploadsessions.erase(sessionId);
-
+  {    uploadsessions.erase(sessionId);
+  std::cout<<"会话 "<<sessionId<<" : 已完成!"<<std::endl;
+  }
   return;
 }
 
@@ -119,6 +120,7 @@ void handleprepareupload(const httplib::Request &req, httplib::Response &res) {
               << "( " << file.value()["fileType"].get<std::string>()
               << ", size: " << file.value()["size"].get<size_t>() << " )"
               << std::endl;
+    i++;
   }
   std::string input;
   std::cout << "输入 'yes' 继续: ";
