@@ -37,7 +37,7 @@ std::string get_new_filename(const std::string &filename) {
   return base_name + "_" + random_suffix + extension;
 }
 void handleupload(const httplib::Request &req, httplib::Response &res,
-                  const std::string &savedir) {
+                 const httplib::ContentReader &content_reader, const std::string &savedir) {
   auto sessionId = req.get_param_value("sessionId");
   if (!uploadsessions.contains(sessionId)) {
     res.status = 400;
@@ -55,7 +55,17 @@ void handleupload(const httplib::Request &req, httplib::Response &res,
     return;
   }
 
-  auto file_content = req.body;
+  std::string file_content;
+  size_t recvsize=0;
+  size_t totalsize=uploadsessions[sessionId][fileId]["info"]["size"].get<size_t>();
+ content_reader([&](const char *data, size_t data_length) {
+        file_content.append(data, data_length);
+	recvsize+=data_length;
+	std::cout<<"\r\033[K"<<uploadsessions[sessionId][fileId]["info"]["fileName"].get<std::string>()<<"("<<sessionId<<"): "<<recvsize<<" / "<<totalsize<<"("<<(double)recvsize/totalsize*100<<"%)";
+	std::cout.flush();
+        return true;
+      });
+ std::cout<<std::endl;
   if (uploadsessions[sessionId][fileId]["info"].contains("token") &&
       !uploadsessions[sessionId][fileId]["info"]["token"].is_null() &&
       uploadsessions[sessionId][fileId]["info"]["token"]
@@ -147,6 +157,7 @@ void handleprepareupload(const httplib::Request &req, httplib::Response &res) {
   std::cout << resjson.dump(4) << std::endl;
 #endif
   res.set_content(resjson.dump(), "application/json");
+  std::cout<<"允许传输,会话为: "<<sid<<std::endl;
 }
 void start_recv(const std::string &savedir) {
   if (!std::filesystem::exists(savedir) ||
@@ -169,8 +180,8 @@ void start_recv(const std::string &savedir) {
   httplib::SSLServer svr(certfile.c_str(), keyfile.c_str());
   svr.Post("/api/localsend/v2/prepare-upload", handleprepareupload);
   svr.Post("/api/localsend/v2/upload",
-           [savedir](const httplib::Request &req, httplib::Response &res) {
-             handleupload(req, res, savedir);
+           [savedir](const httplib::Request &req, httplib::Response &res,const httplib::ContentReader& contentReader) {
+             handleupload(req, res, contentReader,savedir);
            });
   std::cout << "接收端已准备, 等待连接..." << std::endl;
   svr.listen("0.0.0.0", 53317);
