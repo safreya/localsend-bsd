@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <string>
 #include <thread>
 
 #include "global.h"
@@ -124,13 +125,25 @@ nlohmann::json prepare_upload(nlohmann::json &client,
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
   CURLcode res = curl_easy_perform(curl);
+  nlohmann::json response;
+std::map<long,std::string> prepareerrors;
+prepareerrors.emplace(204,"");
+  long response_code;
   if (res != CURLE_OK) {
     std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res)
               << std::endl;
+  }else{
+	   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+#ifdef DEBUG
+            printf("HTTP Response Code: %ld\n", response_code);
+#endif
+	    if(response_code==200)
+  response = nlohmann::json::parse(response_string);
+	    else response["error"]="";
+
   }
 
   curl_easy_cleanup(curl);
-  auto response = nlohmann::json::parse(response_string);
   return response;
 }
 bool checkfiles(const std::vector<std::string> &files,
@@ -180,7 +193,7 @@ void send(const std::vector<std::string> &files) {
   std::string input;
 
   std::cout << "开始搜索客户端 ..." << std::endl;
-  std::cout << "按 Enter 键停止搜索" << std::endl;
+  std::cout << highlight<<"按 Enter 键停止搜索" <<highlight_end<< std::endl;
 
   while (true) {
     std::getline(std::cin, input);
@@ -200,7 +213,7 @@ void send(const std::vector<std::string> &files) {
   }
 
   while (true) {
-    std::cout << "请输入编号或回车选择 1(1 - " << clients.size() << "): ";
+    std::cout << "请输入编号或回车选择"<<highlight<<" 1(1 - " << clients.size() << "): "<<highlight_end;
 
     std::string input;
     std::getline(std::cin, input);
@@ -229,6 +242,9 @@ void send(const std::vector<std::string> &files) {
   auto it = clients.begin();
   std::advance(it, index - 1);
   auto response = prepare_upload(it->second, fileinfos);
+  if(response.contains("error")){
+	  std::cout<<""<<std::endl;
+	  return;}
   fileinfos["upload"] = response;
   sendfiles(it->second, fileinfos);
 }

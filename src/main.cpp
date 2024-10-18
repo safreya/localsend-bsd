@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     exit(0);
   }
   if(supportsColor()){
-	  highlight="\033[32m";
+	  highlight="\033[7;33m";
 	  highlight_end="\033[0m";
   }else{
 	  highlight=" ** ";
