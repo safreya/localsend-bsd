@@ -126,8 +126,6 @@ nlohmann::json prepare_upload(nlohmann::json &client,
 
   CURLcode res = curl_easy_perform(curl);
   nlohmann::json response;
-std::map<long,std::string> prepareerrors;
-prepareerrors.emplace(204,"");
   long response_code;
   if (res != CURLE_OK) {
     std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res)
@@ -139,7 +137,7 @@ prepareerrors.emplace(204,"");
 #endif
 	    if(response_code==200)
   response = nlohmann::json::parse(response_string);
-	    else response["error"]="";
+	    else response["error"]=response_code;
 
   }
 
@@ -242,8 +240,14 @@ void send(const std::vector<std::string> &files) {
   auto it = clients.begin();
   std::advance(it, index - 1);
   auto response = prepare_upload(it->second, fileinfos);
+
+std::map<long,std::string> prepareerrors;
+prepareerrors.emplace(204,"");
   if(response.contains("error")){
-	  std::cout<<""<<std::endl;
+	  auto code=response["error"].get<long>();
+	  if(prepareerrors.contains(code))
+	  std::cout<<prepareerrors[code]<<std::endl;
+	  else std::cout<<"接收端拒收"<<std::endl;
 	  return;}
   fileinfos["upload"] = response;
   sendfiles(it->second, fileinfos);
