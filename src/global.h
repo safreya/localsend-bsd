@@ -11,4 +11,5 @@ extern nlohmann::json myself;
 extern const char *mcastip;
 extern std::string highlight;
 extern std::string highlight_end;
+extern bool autoyes;
 #endif
