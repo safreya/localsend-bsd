@@ -182,7 +182,11 @@ bool checkfiles(const std::vector<std::string> &files,
 			    std::filesystem::path(f).filename().string();
 			fileinfos["files"][hash]["size"] =
 			    std::filesystem::file_size(f);
-			fileinfos["files"][hash]["fileType"] = type;
+			if (type.compare("text/plain") == 0)
+				fileinfos["files"][hash]["fileType"] =
+				    "application/octet-stream";
+			else
+				fileinfos["files"][hash]["fileType"] = type;
 			fileinfos["files"][hash]["sha256"] = hash;
 			fileinfos["files"][hash]["preview"] = "";
 			fileinfos["realpath"][hash] = f;
