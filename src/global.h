@@ -4,6 +4,7 @@
 #include <map>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <atomic>
 extern std::atomic<bool> run;
 extern std::map<std::string, nlohmann::json> clients;
 extern const int PORT;
